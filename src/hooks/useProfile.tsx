@@ -8,7 +8,7 @@ interface Profile {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
-  role: 'patient' | 'doctor';
+  role: 'patient' | 'doctor' | 'admin';
   specialty: string | null;
   language: string | null;
   created_at: string;

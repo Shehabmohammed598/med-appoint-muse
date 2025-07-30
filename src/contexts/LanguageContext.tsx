@@ -79,6 +79,11 @@ const translations = {
     'auth.doctorAccount': 'Doctor Account',
     'auth.patientAccount': 'Patient Account',
     'auth.role': 'Account Type',
+    'auth.adminLogin': 'Admin Login',
+    'auth.logoutSuccess': 'Logged out successfully',
+    'auth.logoutSuccessDesc': 'You have been signed out',
+    'auth.logoutError': 'Logout failed',
+    'auth.logoutErrorDesc': 'Failed to sign out',
     
     // Theme
     'theme.light': 'Light',
@@ -198,6 +203,11 @@ const translations = {
     'auth.doctorAccount': 'حساب طبيب',
     'auth.patientAccount': 'حساب مريض',
     'auth.role': 'نوع الحساب',
+    'auth.adminLogin': 'دخول المدير',
+    'auth.logoutSuccess': 'تم تسجيل الخروج بنجاح',
+    'auth.logoutSuccessDesc': 'تم تسجيل خروجك',
+    'auth.logoutError': 'فشل تسجيل الخروج',
+    'auth.logoutErrorDesc': 'فشل في تسجيل الخروج',
     
     // Theme
     'theme.light': 'فاتح',
