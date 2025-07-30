@@ -11,6 +11,10 @@ import Dashboard from "./pages/Dashboard";
 import Appointments from "./pages/Appointments";
 import Profile from "./pages/Profile";
 import { AuthPage } from "./components/auth/AuthPage";
+import { AdminLayout } from "./components/admin/AdminLayout";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { UserManagement } from "./pages/admin/UserManagement";
+import { AppointmentManagement } from "./pages/admin/AppointmentManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +34,11 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/appointments" element={<Appointments />} />
                 <Route path="/dashboard/profile" element={<Profile />} />
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<UserManagement />} />
+                  <Route path="appointments" element={<AppointmentManagement />} />
+                </Route>
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
