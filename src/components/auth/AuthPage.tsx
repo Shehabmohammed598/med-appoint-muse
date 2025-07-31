@@ -25,7 +25,7 @@ export function AuthPage() {
   const { toast } = useToast();
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/redirect" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
