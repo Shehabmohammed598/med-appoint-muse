@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { PatientSidebar } from './PatientSidebar';
+import { MobileBottomNav } from '@/components/ui/mobile-bottom-nav';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 
@@ -37,9 +38,10 @@ export function PatientLayout({ children }: PatientLayoutProps) {
   return (
     <div className="flex min-h-screen">
       <PatientSidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pb-16 md:pb-0">
         {children}
       </main>
+      <MobileBottomNav />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
+import { BookingConfirmation } from '@/components/ui/booking-confirmation';
 import { doctors } from '@/data/mockData';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
@@ -29,6 +30,7 @@ export function PatientDoctorDetails() {
   const [searchParams] = useSearchParams();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const doctor = doctors.find(d => d.id === doctorId);
   const showBooking = searchParams.get('book') === 'true';
@@ -74,8 +76,7 @@ export function PatientDoctorDetails() {
     if (!selectedDate || !selectedTime) return;
     
     // Here you would typically make an API call to book the appointment
-    alert(`Appointment booked with ${doctor.name} on ${format(selectedDate, 'PPP')} at ${selectedTime}`);
-    navigate('/patient/appointments');
+    setShowConfirmation(true);
   };
 
   return (
@@ -305,6 +306,17 @@ export function PatientDoctorDetails() {
           </div>
         </div>
       </div>
+
+      {/* Booking Confirmation Modal */}
+      {showConfirmation && selectedDate && doctor && (
+        <BookingConfirmation
+          doctorName={doctor.name}
+          date={selectedDate}
+          time={selectedTime}
+          onClose={() => setShowConfirmation(false)}
+          onViewAppointments={() => navigate('/patient/appointments')}
+        />
+      )}
     </PatientLayout>
   );
 }
