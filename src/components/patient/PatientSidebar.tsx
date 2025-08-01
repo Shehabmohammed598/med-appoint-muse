@@ -13,6 +13,7 @@ export function PatientSidebar() {
 
   const navigation = [
     { name: t('dashboard'), href: '/patient', icon: BookOpen },
+    { name: 'Specialties', href: '/patient/specialties', icon: Calendar },
     { name: t('appointments'), href: '/patient/appointments', icon: Calendar },
     { name: t('booking'), href: '/patient/booking', icon: Calendar },
     { name: t('messages'), href: '/patient/messages', icon: MessageSquare },
