@@ -48,8 +48,8 @@ export function PatientLayout({ children }: PatientLayoutProps) {
           <h1 className="text-lg font-semibold text-medical-primary">Patient Portal</h1>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="p-2">
-                <Menu className="h-5 w-5" />
+              <Button variant="ghost" size="sm" className="p-2 hover:bg-accent">
+                <Menu className="h-5 w-5 text-foreground" />
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-64 p-0">
