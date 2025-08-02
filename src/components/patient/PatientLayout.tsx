@@ -3,6 +3,10 @@ import { PatientSidebar } from './PatientSidebar';
 import { MobileBottomNav } from '@/components/ui/mobile-bottom-nav';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
+import { useState } from 'react';
 
 interface PatientLayoutProps {
   children: React.ReactNode;
@@ -11,6 +15,7 @@ interface PatientLayoutProps {
 export function PatientLayout({ children }: PatientLayoutProps) {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (authLoading || profileLoading) {
     return (
@@ -36,11 +41,30 @@ export function PatientLayout({ children }: PatientLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <PatientSidebar />
-      <main className="flex-1 overflow-auto pb-16 md:pb-0">
+    <div className="min-h-screen bg-medical-light">
+      {/* Header with hamburger menu */}
+      <header className="sticky top-0 z-40 bg-white border-b border-medical-border shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3">
+          <h1 className="text-lg font-semibold text-medical-primary">Patient Portal</h1>
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-2">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-64 p-0">
+              <PatientSidebar onNavigate={() => setSidebarOpen(false)} />
+            </SheetContent>
+          </Sheet>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="pb-16 md:pb-0">
         {children}
       </main>
+
+      {/* Mobile bottom navigation */}
       <MobileBottomNav />
     </div>
   );
