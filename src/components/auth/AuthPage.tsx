@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useGuest } from '@/contexts/GuestContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { LanguageToggle } from '@/components/ui/language-toggle';
+import { supabase } from '@/integrations/supabase/client';
+import { Users, UserCheck } from 'lucide-react';
 
 export function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -19,10 +23,15 @@ export function AuthPage() {
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('patient');
   const [loading, setLoading] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
   
   const { user, signIn, signUp } = useAuth();
+  const { setIsGuest } = useGuest();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   if (user) {
     return <Navigate to="/redirect" replace />;
@@ -41,37 +50,118 @@ export function AuthPage() {
         });
         
         if (error) {
+          console.error('Signup error:', error);
+          let errorMessage = "Unable to create account. Please try again.";
+          
+          if (error.message.includes('already registered')) {
+            errorMessage = "This email is already registered. Please sign in instead.";
+          } else if (error.message.includes('Password')) {
+            errorMessage = "Password must be at least 6 characters long.";
+          } else if (error.message.includes('email')) {
+            errorMessage = "Please enter a valid email address.";
+          }
+          
           toast({
-            title: "Error",
-            description: error.message,
+            title: "Signup Failed",
+            description: errorMessage,
             variant: "destructive",
           });
         } else {
           toast({
-            title: "Success",
-            description: "Account created successfully! Please check your email to verify your account.",
+            title: "Account Created!",
+            description: "Please check your email to verify your account before signing in.",
           });
+          // Switch to sign in mode after successful signup
+          setIsSignUp(false);
+          setPassword(''); // Clear password for security
         }
       } else {
         const { error } = await signIn(email, password);
         
         if (error) {
+          console.error('Login error:', error);
+          let errorMessage = "Invalid login credentials. Please check your email and password.";
+          
+          if (error.message.includes('Email not confirmed')) {
+            errorMessage = "Please verify your email address before signing in. Check your inbox for a confirmation email.";
+          } else if (error.message.includes('Invalid login credentials')) {
+            errorMessage = "Invalid email or password. Please try again or reset your password.";
+          } else if (error.message.includes('too many requests')) {
+            errorMessage = "Too many login attempts. Please wait a few minutes before trying again.";
+          }
+          
           toast({
-            title: "Error",
-            description: error.message,
+            title: "Login Failed",
+            description: errorMessage,
             variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Welcome back!",
+            description: "You have been signed in successfully.",
           });
         }
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Authentication Error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!resetEmail) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResettingPassword(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+
+      if (error) {
+        toast({
+          title: "Reset Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Reset Email Sent",
+          description: "Check your email for password reset instructions.",
+        });
+        setShowPasswordReset(false);
+        setResetEmail('');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to send reset email. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
+  const handleContinueAsGuest = () => {
+    setIsGuest(true);
+    navigate('/patient/specialties');
+    toast({
+      title: "Browsing as Guest",
+      description: "You can explore doctors and specialties. Sign up to book appointments!",
+    });
   };
 
   return (
@@ -164,11 +254,86 @@ export function AuthPage() {
             </div>
             
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? '...' : (isSignUp ? t('auth.signUp') : t('auth.signIn'))}
+              <UserCheck className="w-4 h-4 mr-2" />
+              {loading ? 'Please wait...' : (isSignUp ? t('auth.signUp') : t('auth.signIn'))}
             </Button>
+
+            {!isSignUp && (
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-sm text-muted-foreground"
+                  onClick={() => {
+                    setResetEmail(email);
+                    setShowPasswordReset(true);
+                  }}
+                >
+                  Forgot your password?
+                </Button>
+              </div>
+            )}
           </form>
+
+          {/* Guest Mode Section */}
+          <div className="mt-6 pt-6 border-t border-border">
+            <div className="text-center space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Don't want to create an account right now?
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleContinueAsGuest}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Continue as Guest
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Browse doctors and specialties without signing up
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Password Reset Dialog */}
+      <AlertDialog open={showPasswordReset} onOpenChange={setShowPasswordReset}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Password</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="resetEmail">Email Address</Label>
+            <Input
+              id="resetEmail"
+              type="email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              placeholder="Enter your email"
+              className="mt-2"
+            />
+          </div>
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPasswordReset(false)}
+            >
+              Cancel
+            </Button>
+            <AlertDialogAction
+              onClick={handlePasswordReset}
+              disabled={resettingPassword}
+            >
+              {resettingPassword ? 'Sending...' : 'Send Reset Email'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { PatientLayout } from '@/components/patient/PatientLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent } from '@/components/ui/card';
+import { useGuest } from '@/contexts/GuestContext';
 import { specialties } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
 import { Users, ArrowRight } from 'lucide-react';
@@ -8,8 +9,10 @@ import { Users, ArrowRight } from 'lucide-react';
 export function PatientSpecialties() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { addBrowsedSpecialty } = useGuest();
 
   const handleSpecialtyClick = (specialtyName: string) => {
+    addBrowsedSpecialty(specialtyName);
     navigate(`/patient/doctors/${encodeURIComponent(specialtyName)}`);
   };
 

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { GuestProvider } from "@/contexts/GuestContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Appointments from "./pages/Appointments";
@@ -34,7 +35,8 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <LanguageProvider>
-        <AuthProvider>
+        <GuestProvider>
+          <AuthProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -73,7 +75,8 @@ const App = () => (
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </GuestProvider>
       </LanguageProvider>
     </ThemeProvider>
   </QueryClientProvider>

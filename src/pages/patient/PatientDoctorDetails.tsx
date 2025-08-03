@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { BookingConfirmation } from '@/components/ui/booking-confirmation';
+import { BookingProtection } from '@/components/auth/BookingProtection';
+import { useBookingProtection } from '@/hooks/useBookingProtection';
+import { useGuest } from '@/contexts/GuestContext';
 import { doctors } from '@/data/mockData';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Star, 
   Clock, 
@@ -31,10 +34,20 @@ export function PatientDoctorDetails() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  
+  const { showProtection, setShowProtection, checkBookingPermission } = useBookingProtection();
+  const { addViewedDoctor } = useGuest();
 
   const doctor = doctors.find(d => d.id === doctorId);
   const showBooking = searchParams.get('book') === 'true';
   const isEmergency = searchParams.get('emergency') === 'true';
+
+  // Track doctor view for guest session
+  useEffect(() => {
+    if (doctor && doctorId) {
+      addViewedDoctor(doctorId);
+    }
+  }, [doctor, doctorId, addViewedDoctor]);
 
   if (!doctor) {
     return (
@@ -75,8 +88,17 @@ export function PatientDoctorDetails() {
   const handleBooking = () => {
     if (!selectedDate || !selectedTime) return;
     
-    // Here you would typically make an API call to book the appointment
-    setShowConfirmation(true);
+    checkBookingPermission(() => {
+      // Here you would typically make an API call to book the appointment
+      setShowConfirmation(true);
+    });
+  };
+
+  const handleEmergencyRequest = () => {
+    checkBookingPermission(() => {
+      // Handle emergency request
+      console.log('Emergency request submitted');
+    });
   };
 
   return (
@@ -216,7 +238,10 @@ export function PatientDoctorDetails() {
                         This will be prioritized and the doctor will be notified immediately.
                       </p>
                     </div>
-                    <Button className="w-full bg-emergency hover:bg-emergency/90">
+                    <Button 
+                      className="w-full bg-emergency hover:bg-emergency/90"
+                      onClick={handleEmergencyRequest}
+                    >
                       <AlertTriangle className="h-4 w-4 mr-2" />
                       Submit Emergency Request
                     </Button>
@@ -317,6 +342,12 @@ export function PatientDoctorDetails() {
           onViewAppointments={() => navigate('/patient/appointments')}
         />
       )}
+
+      {/* Booking Protection for Guests */}
+      <BookingProtection 
+        open={showProtection} 
+        onOpenChange={setShowProtection} 
+      />
     </PatientLayout>
   );
 }
