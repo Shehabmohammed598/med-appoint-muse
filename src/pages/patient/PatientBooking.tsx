@@ -50,7 +50,15 @@ export function PatientBooking() {
           variant: 'destructive',
         });
       } else {
+        console.log('Fetched doctors:', data);
         setDoctors(data || []);
+        if (!data || data.length === 0) {
+          toast({
+            title: 'No Doctors Available',
+            description: 'No doctors are currently registered in the system.',
+            variant: 'destructive',
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching doctors:', error);
@@ -74,6 +82,15 @@ export function PatientBooking() {
 
     setLoading(true);
     try {
+      console.log('Booking appointment with data:', {
+        patient_id: profile.user_id,
+        doctor_id: selectedDoctor,
+        appointment_date: selectedDate.toISOString().split('T')[0],
+        appointment_time: selectedTime,
+        notes: notes || null,
+        status: 'scheduled'
+      });
+
       const { error } = await supabase
         .from('appointments')
         .insert({
@@ -86,12 +103,14 @@ export function PatientBooking() {
         });
 
       if (error) {
+        console.error('Error booking appointment:', error);
         toast({
           title: t('error'),
-          description: t('errorBookingAppointment'),
+          description: `Failed to book appointment: ${error.message}`,
           variant: 'destructive',
         });
       } else {
+        console.log('Appointment booked successfully');
         toast({
           title: t('success'),
           description: t('appointmentBooked'),
