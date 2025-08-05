@@ -8,6 +8,9 @@ import { BookingConfirmation } from '@/components/ui/booking-confirmation';
 import { BookingProtection } from '@/components/auth/BookingProtection';
 import { useBookingProtection } from '@/hooks/useBookingProtection';
 import { useGuest } from '@/contexts/GuestContext';
+import { useProfile } from '@/hooks/useProfile';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { doctors } from '@/data/mockData';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -34,9 +37,12 @@ export function PatientDoctorDetails() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [emergencyLoading, setEmergencyLoading] = useState(false);
   
   const { showProtection, setShowProtection, checkBookingPermission } = useBookingProtection();
   const { addViewedDoctor } = useGuest();
+  const { profile } = useProfile();
+  const { toast } = useToast();
 
   const doctor = doctors.find(d => d.id === doctorId);
   const showBooking = searchParams.get('book') === 'true';
@@ -94,10 +100,44 @@ export function PatientDoctorDetails() {
     });
   };
 
-  const handleEmergencyRequest = () => {
-    checkBookingPermission(() => {
-      // Handle emergency request
-      console.log('Emergency request submitted');
+  const handleEmergencyRequest = async () => {
+    checkBookingPermission(async () => {
+      if (!profile || !doctor) return;
+      
+      setEmergencyLoading(true);
+      try {
+        // Find the doctor's user_id from the mockData (in a real app, this would come from the database)
+        const { error } = await supabase
+          .from('emergency_requests')
+          .insert({
+            patient_id: profile.user_id,
+            doctor_id: doctor.id, // Using doctor ID from mock data
+            message: 'Emergency assistance requested',
+            status: 'pending'
+          });
+
+        if (error) {
+          toast({
+            title: 'Error',
+            description: 'Failed to submit emergency request. Please try again.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Emergency Request Submitted',
+            description: 'The doctor has been notified and will respond as soon as possible.',
+          });
+        }
+      } catch (error) {
+        console.error('Error submitting emergency request:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to submit emergency request. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setEmergencyLoading(false);
+      }
     });
   };
 
@@ -238,13 +278,14 @@ export function PatientDoctorDetails() {
                         This will be prioritized and the doctor will be notified immediately.
                       </p>
                     </div>
-                    <Button 
-                      className="w-full bg-emergency hover:bg-emergency/90"
-                      onClick={handleEmergencyRequest}
-                    >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Submit Emergency Request
-                    </Button>
+                     <Button 
+                       className="w-full bg-emergency hover:bg-emergency/90"
+                       onClick={handleEmergencyRequest}
+                       disabled={emergencyLoading}
+                     >
+                       <AlertTriangle className="h-4 w-4 mr-2" />
+                       {emergencyLoading ? 'Submitting...' : 'Submit Emergency Request'}
+                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">

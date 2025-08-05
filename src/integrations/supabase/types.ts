@@ -65,6 +65,36 @@ export type Database = {
           },
         ]
       }
+      emergency_requests: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          id: string
+          message: string | null
+          patient_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          id?: string
+          message?: string | null
+          patient_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          message?: string | null
+          patient_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

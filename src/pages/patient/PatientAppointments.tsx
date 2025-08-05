@@ -1,6 +1,6 @@
 import { PatientLayout } from '@/components/patient/PatientLayout';
 import { useProfile } from '@/hooks/useProfile';
-import { useAppointments } from '@/hooks/useAppointments';
+import { usePatientAppointments } from '@/hooks/usePatientAppointments';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,25 +11,11 @@ import { Link } from 'react-router-dom';
 
 export function PatientAppointments() {
   const { profile } = useProfile();
-  const { appointments } = useAppointments();
+  const { appointments, loading, getUpcomingAppointments, getPastAppointments } = usePatientAppointments();
   const { t } = useLanguage();
 
-  // Filter appointments for this patient
-  const myAppointments = appointments.filter(apt => apt.patient_id === profile?.user_id);
-  
-  const upcomingAppointments = myAppointments.filter(apt => {
-    const appointmentDate = new Date(apt.appointment_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return appointmentDate >= today && apt.status !== 'completed' && apt.status !== 'canceled';
-  });
-
-  const pastAppointments = myAppointments.filter(apt => {
-    const appointmentDate = new Date(apt.appointment_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return appointmentDate < today || apt.status === 'completed';
-  });
+  const upcomingAppointments = getUpcomingAppointments();
+  const pastAppointments = getPastAppointments();
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -46,7 +32,7 @@ export function PatientAppointments() {
     );
   };
 
-  const renderAppointmentList = (appointmentList: typeof myAppointments) => (
+  const renderAppointmentList = (appointmentList: typeof appointments) => (
     <div className="space-y-4">
       {appointmentList.length === 0 ? (
         <p className="text-muted-foreground text-center py-8">{t('noAppointments')}</p>
@@ -61,10 +47,18 @@ export function PatientAppointments() {
                     <h3 className="font-semibold">
                       {new Date(appointment.appointment_date).toLocaleDateString()}
                     </h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      {appointment.appointment_time}
-                    </div>
+                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                       <Clock className="h-4 w-4" />
+                       {appointment.appointment_time}
+                     </div>
+                     {appointment.doctor_profile && (
+                       <p className="text-sm font-medium mt-1">
+                         Dr. {appointment.doctor_profile.first_name} {appointment.doctor_profile.last_name}
+                         {appointment.doctor_profile.specialty && (
+                           <span className="text-muted-foreground"> - {appointment.doctor_profile.specialty}</span>
+                         )}
+                       </p>
+                     )}
                     {appointment.notes && (
                       <div className="flex items-start gap-2 mt-2">
                         <FileText className="h-4 w-4 mt-0.5 text-muted-foreground" />
