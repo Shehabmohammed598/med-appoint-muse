@@ -1,4 +1,4 @@
-import { PatientLayout } from '@/components/patient/PatientLayout';
+import { GuestSafeLayout } from '@/components/layouts/GuestSafeLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,7 @@ export function PatientDoctors() {
   };
 
   return (
-    <PatientLayout>
+    <GuestSafeLayout>
       <div className="p-6 space-y-6 animate-fade-in">
         {/* Header with Back Button */}
         <div className="flex items-center gap-4 mb-6">
@@ -186,6 +186,6 @@ export function PatientDoctors() {
           </div>
         )}
       </div>
-    </PatientLayout>
+    </GuestSafeLayout>
   );
 }

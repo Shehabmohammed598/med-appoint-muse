@@ -26,7 +26,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (profile?.role !== 'patient') {
@@ -41,11 +41,11 @@ export function PatientLayout({ children }: PatientLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-medical-light">
+    <div className="min-h-screen bg-background">
       {/* Header with hamburger menu */}
-      <header className="sticky top-0 z-40 bg-white border-b border-medical-border shadow-sm">
+      <header className="sticky top-0 z-40 bg-background border-b border-border shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="text-lg font-semibold text-medical-primary">Patient Portal</h1>
+          <h1 className="text-lg font-semibold text-foreground">Patient Portal</h1>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="sm" className="p-2 hover:bg-accent">

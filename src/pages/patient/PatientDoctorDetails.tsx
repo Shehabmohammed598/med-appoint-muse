@@ -1,4 +1,4 @@
-import { PatientLayout } from '@/components/patient/PatientLayout';
+import { GuestSafeLayout } from '@/components/layouts/GuestSafeLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,18 +53,18 @@ export function PatientDoctorDetails() {
     if (doctor && doctorId) {
       addViewedDoctor(doctorId);
     }
-  }, [doctor, doctorId, addViewedDoctor]);
+  }, [doctor, doctorId]); // Remove addViewedDoctor from dependencies to prevent infinite loop
 
   if (!doctor) {
     return (
-      <PatientLayout>
+      <GuestSafeLayout>
         <div className="p-6 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Doctor Not Found</h1>
           <Button onClick={() => navigate('/patient/specialties')}>
             Back to Specialties
           </Button>
         </div>
-      </PatientLayout>
+      </GuestSafeLayout>
     );
   }
 
@@ -166,7 +166,7 @@ export function PatientDoctorDetails() {
   };
 
   return (
-    <PatientLayout>
+    <GuestSafeLayout>
       <div className="p-6 space-y-6 animate-fade-in">
         {/* Header with Back Button */}
         <div className="flex items-center gap-4 mb-6">
@@ -413,6 +413,6 @@ export function PatientDoctorDetails() {
         open={showProtection} 
         onOpenChange={setShowProtection} 
       />
-    </PatientLayout>
+    </GuestSafeLayout>
   );
 }

@@ -20,7 +20,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (profile?.role !== 'doctor') {

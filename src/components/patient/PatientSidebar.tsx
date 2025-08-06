@@ -26,7 +26,7 @@ export function PatientSidebar({ onNavigate }: PatientSidebarProps) {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-background">
       <div className="flex flex-col h-full">
         <div className="p-6 border-b">
           <h2 className="text-lg font-semibold text-medical-primary">{t('patientPortal')}</h2>
@@ -53,7 +53,7 @@ export function PatientSidebar({ onNavigate }: PatientSidebarProps) {
           })}
         </nav>
 
-        <div className="p-6 space-y-4 border-t bg-gray-50">
+        <div className="p-6 space-y-4 border-t bg-muted/50">
           <div className="flex gap-2">
             <LanguageToggle />
             <ThemeToggle />

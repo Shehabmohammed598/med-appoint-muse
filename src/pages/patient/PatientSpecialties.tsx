@@ -1,4 +1,4 @@
-import { PatientLayout } from '@/components/patient/PatientLayout';
+import { GuestSafeLayout } from '@/components/layouts/GuestSafeLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { useGuest } from '@/contexts/GuestContext';
@@ -17,7 +17,7 @@ export function PatientSpecialties() {
   };
 
   return (
-    <PatientLayout>
+    <GuestSafeLayout>
       <div className="p-6 space-y-6 animate-fade-in">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -78,6 +78,6 @@ export function PatientSpecialties() {
           </p>
         </div>
       </div>
-    </PatientLayout>
+    </GuestSafeLayout>
   );
 }
