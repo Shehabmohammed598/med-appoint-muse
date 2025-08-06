@@ -102,27 +102,51 @@ export function PatientDoctorDetails() {
 
   const handleEmergencyRequest = async () => {
     checkBookingPermission(async () => {
-      if (!profile || !doctor) return;
+      if (!profile) return;
       
       setEmergencyLoading(true);
       try {
-        // Find the doctor's user_id from the mockData (in a real app, this would come from the database)
+        console.log('Submitting emergency request for patient:', profile.user_id);
+        
+        // First, get any available doctor from the database
+        const { data: doctors, error: doctorsError } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('role', 'doctor')
+          .limit(1);
+
+        if (doctorsError) {
+          console.error('Error fetching doctors:', doctorsError);
+          throw new Error('No doctors available');
+        }
+
+        if (!doctors || doctors.length === 0) {
+          toast({
+            title: 'No Doctors Available',
+            description: 'No doctors are currently registered in the system.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
         const { error } = await supabase
           .from('emergency_requests')
           .insert({
             patient_id: profile.user_id,
-            doctor_id: doctor.id, // Using doctor ID from mock data
+            doctor_id: doctors[0].user_id, // Use the first available doctor
             message: 'Emergency assistance requested',
             status: 'pending'
           });
 
         if (error) {
+          console.error('Error submitting emergency request:', error);
           toast({
             title: 'Error',
-            description: 'Failed to submit emergency request. Please try again.',
+            description: `Failed to submit emergency request: ${error.message}`,
             variant: 'destructive',
           });
         } else {
+          console.log('Emergency request submitted successfully');
           toast({
             title: 'Emergency Request Submitted',
             description: 'The doctor has been notified and will respond as soon as possible.',

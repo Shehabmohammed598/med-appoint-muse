@@ -33,6 +33,8 @@ export function usePatientAppointments() {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
+      console.log('Fetching appointments for patient:', user?.id);
+      
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -50,6 +52,7 @@ export function usePatientAppointments() {
       if (error) {
         console.error('Error fetching appointments:', error);
       } else {
+        console.log('Fetched appointments:', data);
         setAppointments((data || []) as Appointment[]);
       }
     } catch (error) {

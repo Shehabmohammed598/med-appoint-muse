@@ -27,6 +27,7 @@ import { PatientSettings } from "./pages/patient/PatientSettings";
 import { PatientSpecialties } from "./pages/patient/PatientSpecialties";
 import { PatientDoctors } from "./pages/patient/PatientDoctors";
 import { PatientDoctorDetails } from "./pages/patient/PatientDoctorDetails";
+import { TestDoctorSetup } from "./pages/TestDoctorSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,8 +62,9 @@ const App = () => (
                 <Route path="/patient/appointments" element={<PatientAppointments />} />
                 <Route path="/patient/booking" element={<PatientBooking />} />
                 <Route path="/patient/messages" element={<PatientMessages />} />
-                <Route path="/patient/profile" element={<PatientProfile />} />
-                <Route path="/patient/settings" element={<PatientSettings />} />
+                 <Route path="/patient/profile" element={<PatientProfile />} />
+                 <Route path="/patient/settings" element={<PatientSettings />} />
+                 <Route path="/test-setup" element={<TestDoctorSetup />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLayout />}>
