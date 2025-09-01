@@ -24,7 +24,6 @@ export function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [showSessionChoice, setShowSessionChoice] = useState(false);
   
   const { user, signIn, signUp, signOut } = useAuth();
   const { setIsGuest } = useGuest();
@@ -32,12 +31,6 @@ export function AuthPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Check for existing session on mount
-  useEffect(() => {
-    if (user && !showSessionChoice) {
-      setShowSessionChoice(true);
-    }
-  }, [user, showSessionChoice]);
 
   if (showForgotPassword) {
     return <ForgotPasswordFlow onBack={() => setShowForgotPassword(false)} />;
@@ -127,13 +120,11 @@ export function AuthPage() {
 
   const handleStartFresh = async () => {
     await signOut();
-    setShowSessionChoice(false);
     toast({
       title: "Session Cleared",
       description: "You can now sign in with a new account or continue as guest.",
     });
   };
-
   const handleContinueAsGuest = () => {
     setIsGuest(true);
     navigate('/patient/specialties');
@@ -143,75 +134,6 @@ export function AuthPage() {
     });
   };
 
-  // Show session choice dialog if user is already logged in
-  if (showSessionChoice && user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 p-6 flex items-center justify-between">
-          <Link to="/home" className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
-            <Heart className="h-6 w-6" />
-            <span className="text-xl font-bold">HealthCare</span>
-          </Link>
-          <div className="flex gap-2">
-            <LanguageToggle />
-            <ThemeToggle />
-          </div>
-        </div>
-        
-        <Card className="w-full max-w-lg shadow-2xl border-0 bg-card/80 backdrop-blur-sm">
-          <CardHeader className="space-y-4 pb-8">
-            <div className="text-center space-y-2">
-              <CardTitle className="text-3xl font-bold tracking-tight">
-                Welcome Back!
-              </CardTitle>
-              <CardDescription className="text-base text-muted-foreground">
-                You have an existing session. What would you like to do?
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="px-8 pb-8 space-y-4">
-            <Button 
-              onClick={handleContinueWithSession}
-              className="w-full h-12 text-base font-medium"
-            >
-              <UserCheck className="w-4 h-4 mr-2" />
-              Continue with Existing Session
-            </Button>
-            
-            <Button 
-              onClick={handleStartFresh}
-              variant="outline"
-              className="w-full h-12 text-base font-medium"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Start Fresh / Sign in as Different User
-            </Button>
-
-            {/* Guest Mode Section */}
-            <div className="mt-6 pt-6 border-t border-border">
-              <div className="text-center space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Or continue without an account
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-12 text-base font-medium border-dashed hover:border-solid transition-all"
-                  onClick={handleContinueAsGuest}
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Continue as Guest
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
@@ -255,6 +177,22 @@ export function AuthPage() {
           </div>
         </CardHeader>
         <CardContent className="px-8 pb-8">
+          {/* Existing session notice - shows login first but offers to continue */}
+          {user && (
+            <div className="mb-6 p-3 rounded-md border border-border bg-muted/40 flex flex-col sm:flex-row items-center gap-3 justify-between">
+              <p className="text-sm text-muted-foreground">An existing session was found.</p>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleContinueWithSession}>
+                  <UserCheck className="w-4 h-4 mr-2" />
+                  Continue session
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleStartFresh}>
+                  Switch account
+                </Button>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {isSignUp && (
               <>
