@@ -160,7 +160,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_public_doctors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          first_name: string
+          id: string
+          last_name: string
+          specialty: string
+        }[]
+      }
     }
     Enums: {
       user_role: "patient" | "doctor" | "admin"
