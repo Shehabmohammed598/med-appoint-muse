@@ -65,33 +65,168 @@ export type Database = {
           },
         ]
       }
+      emergency_limits: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          max_emergency_slots: number
+          specialty: string
+          updated_at: string | null
+          used_slots: number
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          max_emergency_slots?: number
+          specialty: string
+          updated_at?: string | null
+          used_slots?: number
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          max_emergency_slots?: number
+          specialty?: string
+          updated_at?: string | null
+          used_slots?: number
+        }
+        Relationships: []
+      }
       emergency_requests: {
         Row: {
+          admin_review_notes: string | null
+          admin_reviewed: boolean | null
           created_at: string
           doctor_id: string
           id: string
+          medical_description: string | null
+          medical_report_url: string | null
           message: string | null
           patient_id: string
+          priority_level: number | null
           status: string
           updated_at: string
         }
         Insert: {
+          admin_review_notes?: string | null
+          admin_reviewed?: boolean | null
           created_at?: string
           doctor_id: string
           id?: string
+          medical_description?: string | null
+          medical_report_url?: string | null
           message?: string | null
           patient_id: string
+          priority_level?: number | null
           status?: string
           updated_at?: string
         }
         Update: {
+          admin_review_notes?: string | null
+          admin_reviewed?: boolean | null
           created_at?: string
           doctor_id?: string
           id?: string
+          medical_description?: string | null
+          medical_report_url?: string | null
           message?: string | null
           patient_id?: string
+          priority_level?: number | null
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          id: string
+          message: string
+          read: boolean | null
+          recipient_id: string
+          sender_id: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean | null
+          recipient_id: string
+          sender_id?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          recipient_id?: string
+          sender_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      offline_bookings: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string | null
+          created_offline_at: string
+          doctor_id: string
+          error_message: string | null
+          id: string
+          is_emergency: boolean | null
+          medical_description: string | null
+          notes: string | null
+          patient_id: string
+          sync_status: string | null
+          synced_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string | null
+          created_offline_at: string
+          doctor_id: string
+          error_message?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          medical_description?: string | null
+          notes?: string | null
+          patient_id: string
+          sync_status?: string | null
+          synced_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string | null
+          created_offline_at?: string
+          doctor_id?: string
+          error_message?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          medical_description?: string | null
+          notes?: string | null
+          patient_id?: string
+          sync_status?: string | null
+          synced_at?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -160,6 +295,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_emergency_slot_availability: {
+        Args: { p_date?: string; p_specialty: string }
+        Returns: boolean
+      }
       get_public_doctors: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -168,6 +307,10 @@ export type Database = {
           last_name: string
           specialty: string
         }[]
+      }
+      increment_emergency_slot_usage: {
+        Args: { p_date?: string; p_specialty: string }
+        Returns: boolean
       }
     }
     Enums: {
