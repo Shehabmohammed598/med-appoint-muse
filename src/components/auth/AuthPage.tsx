@@ -10,9 +10,10 @@ import { useGuest } from '@/contexts/GuestContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { LanguageToggle } from '@/components/ui/language-toggle';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import { SMSAuthForm } from './SMSAuthForm';
 import { ForgotPasswordFlow } from './ForgotPasswordFlow';
-import { Users, UserCheck, Eye, EyeOff, Mail, Lock, Heart } from 'lucide-react';
+import { Users, UserCheck, Eye, EyeOff, Mail, Lock, Heart, Smartphone } from 'lucide-react';
 
 export function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -144,7 +145,7 @@ export function AuthPage() {
           <span className="text-xl font-bold">HealthCare</span>
         </Link>
         <div className="flex gap-2">
-          <LanguageToggle />
+          <LanguageSwitcher />
           <ThemeToggle />
         </div>
       </div>
