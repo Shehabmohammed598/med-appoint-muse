@@ -25,8 +25,10 @@ export function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
+  const [emailForResend, setEmailForResend] = useState('');
   
-  const { user, signIn, signUp, signOut } = useAuth();
+  const { user, signIn, signUp, signOut, resendConfirmation } = useAuth();
   const { setIsGuest } = useGuest();
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -84,6 +86,8 @@ export function AuthPage() {
           
           if (error.message.includes('Email not confirmed')) {
             errorMessage = "Please verify your email address before signing in. Check your inbox for a confirmation email.";
+            setShowResendConfirmation(true);
+            setEmailForResend(email);
           } else if (error.message.includes('Invalid login credentials')) {
             errorMessage = "Invalid email or password. Please try again or reset your password.";
           } else if (error.message.includes('too many requests')) {
@@ -126,6 +130,35 @@ export function AuthPage() {
       description: "You can now sign in with a new account or continue as guest.",
     });
   };
+
+  const handleResendConfirmation = async () => {
+    setLoading(true);
+    try {
+      const { error } = await resendConfirmation(emailForResend);
+      if (error) {
+        toast({
+          title: "Resend Failed",
+          description: "Failed to resend confirmation email. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Email Sent!",
+          description: "Confirmation email has been resent. Please check your inbox.",
+        });
+        setShowResendConfirmation(false);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleContinueAsGuest = () => {
     setIsGuest(true);
     navigate('/patient/specialties');
@@ -287,7 +320,7 @@ export function AuthPage() {
             </Button>
 
             {!isSignUp && (
-              <div className="text-center">
+              <div className="text-center space-y-2">
                 <Button
                   type="button"
                   variant="link"
@@ -296,6 +329,22 @@ export function AuthPage() {
                 >
                   Forgot your password?
                 </Button>
+                {showResendConfirmation && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Didn't receive the confirmation email?
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResendConfirmation}
+                      disabled={loading}
+                    >
+                      Resend Confirmation Email
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </form>
