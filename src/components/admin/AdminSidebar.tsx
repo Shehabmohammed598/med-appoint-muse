@@ -3,7 +3,8 @@ import {
   Calendar, 
   LayoutDashboard, 
   LogOut,
-  Shield 
+  Shield,
+  UserCheck
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
@@ -36,6 +37,11 @@ const adminNavItems = [
     title: 'admin.appointments',
     url: '/admin/appointments',
     icon: Calendar,
+  },
+  {
+    title: 'Guest Bookings',
+    url: '/admin/guest-bookings',
+    icon: UserCheck,
   },
 ];
 

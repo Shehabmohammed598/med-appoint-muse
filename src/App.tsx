@@ -29,6 +29,10 @@ import { PatientDoctors } from "./pages/patient/PatientDoctors";
 import { PatientDoctorDetails } from "./pages/patient/PatientDoctorDetails";
 import { TestDoctorSetup } from "./pages/TestDoctorSetup";
 import NotFound from "./pages/NotFound";
+import GuestBookingForm from "./components/booking/GuestBookingForm";
+import BookingConfirmation from "./pages/BookingConfirmation";
+import AdminLogin from "./pages/AdminLogin";
+import { GuestBookingManagement } from "./pages/admin/GuestBookingManagement";
 
 const queryClient = new QueryClient();
 
@@ -43,8 +47,10 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<AuthPage />} />
-                <Route path="/home" element={<Index />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/book-appointment" element={<GuestBookingForm />} />
+                <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+                <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/redirect" element={<RoleBasedRedirect />} />
@@ -69,8 +75,10 @@ const App = () => (
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
+                  <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="users" element={<UserManagement />} />
                   <Route path="appointments" element={<AppointmentManagement />} />
+                  <Route path="guest-bookings" element={<GuestBookingManagement />} />
                 </Route>
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

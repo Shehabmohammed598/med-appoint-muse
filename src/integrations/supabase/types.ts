@@ -140,6 +140,48 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_bookings: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string
+          doctor_name: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          phone_number: string
+          specialty: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string
+          doctor_name?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone_number: string
+          specialty: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string
+          doctor_name?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone_number?: string
+          specialty?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null

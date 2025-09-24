@@ -50,7 +50,7 @@ const Index = () => {
             <LanguageToggle />
             <ThemeToggle />
             <Button asChild variant="outline">
-              <Link to="/">{t('signIn')}</Link>
+              <Link to="/admin-login">{t('signIn')}</Link>
             </Button>
           </nav>
         </div>
@@ -67,7 +67,7 @@ const Index = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg">
-              <Link to="/">
+              <Link to="/book-appointment">
                 <Calendar className="mr-2 h-5 w-5" />
                 {t('getStarted')}
               </Link>
@@ -138,7 +138,7 @@ const Index = () => {
               <CardContent className="text-center">
                 <p className="text-muted-foreground mb-4">{t('bookAppointmentsViewRecords')}</p>
                 <Button asChild className="w-full">
-                  <Link to="/">{t('patientLogin')}</Link>
+                  <Link to="/book-appointment">Book Appointment</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -151,7 +151,7 @@ const Index = () => {
               <CardContent className="text-center">
                 <p className="text-muted-foreground mb-4">{t('managePatientsAppointments')}</p>
                 <Button asChild variant="outline" className="w-full">
-                  <Link to="/">{t('doctorLogin')}</Link>
+                  <Link to="/admin-login">{t('doctorLogin')}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -164,7 +164,7 @@ const Index = () => {
               <CardContent className="text-center">
                 <p className="text-muted-foreground mb-4">{t('systemAdministration')}</p>
                 <Button asChild variant="destructive" className="w-full">
-                  <Link to="/">{t('adminLogin')}</Link>
+                  <Link to="/admin-login">{t('adminLogin')}</Link>
                 </Button>
               </CardContent>
             </Card>
