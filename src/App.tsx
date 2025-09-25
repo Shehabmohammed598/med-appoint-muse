@@ -20,7 +20,7 @@ import { UserManagement } from "./pages/admin/UserManagement";
 import { AppointmentManagement } from "./pages/admin/AppointmentManagement";
 import { PatientDashboard } from "./pages/patient/PatientDashboard";
 import { PatientAppointments } from "./pages/patient/PatientAppointments";
-import { PatientBooking } from "./pages/patient/PatientBooking";
+import PatientBookingForm from "./pages/patient/PatientBookingForm";
 import { PatientMessages } from "./pages/patient/PatientMessages";
 import { PatientProfile } from "./pages/patient/PatientProfile";
 import { PatientSettings } from "./pages/patient/PatientSettings";
@@ -66,7 +66,7 @@ const App = () => (
                 <Route path="/patient/doctors/:specialty" element={<PatientDoctors />} />
                 <Route path="/patient/doctor/:doctorId" element={<PatientDoctorDetails />} />
                 <Route path="/patient/appointments" element={<PatientAppointments />} />
-                <Route path="/patient/booking" element={<PatientBooking />} />
+                <Route path="/patient/booking" element={<PatientBookingForm />} />
                 <Route path="/patient/messages" element={<PatientMessages />} />
                  <Route path="/patient/profile" element={<PatientProfile />} />
                  <Route path="/patient/settings" element={<PatientSettings />} />

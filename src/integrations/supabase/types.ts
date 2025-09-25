@@ -334,7 +334,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      patient_appointment_history: {
+        Row: {
+          appointment_date: string | null
+          appointment_time: string | null
+          created_at: string | null
+          doctor_first_name: string | null
+          doctor_last_name: string | null
+          doctor_specialty: string | null
+          id: string | null
+          notes: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_emergency_slot_availability: {
