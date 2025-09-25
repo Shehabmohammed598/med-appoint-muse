@@ -32,6 +32,7 @@ import NotFound from "./pages/NotFound";
 import GuestBookingForm from "./components/booking/GuestBookingForm";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import AdminLogin from "./pages/AdminLogin";
+import PatientAuth from "./pages/PatientAuth";
 import { GuestBookingManagement } from "./pages/admin/GuestBookingManagement";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
                 <Route path="/book-appointment" element={<GuestBookingForm />} />
                 <Route path="/booking-confirmation" element={<BookingConfirmation />} />
                 <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/patient-auth" element={<PatientAuth />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/redirect" element={<RoleBasedRedirect />} />

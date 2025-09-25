@@ -135,11 +135,16 @@ const Index = () => {
                 <Users className="h-12 w-12 text-blue-500 mx-auto mb-4" />
                 <CardTitle>{t('patientPortal')}</CardTitle>
               </CardHeader>
-              <CardContent className="text-center">
+              <CardContent className="text-center space-y-3">
                 <p className="text-muted-foreground mb-4">{t('bookAppointmentsViewRecords')}</p>
-                <Button asChild className="w-full">
-                  <Link to="/book-appointment">Book Appointment</Link>
-                </Button>
+                <div className="space-y-2">
+                  <Button asChild className="w-full">
+                    <Link to="/patient-auth">Patient Login</Link>
+                  </Button>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link to="/book-appointment">Book as Guest</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
             
