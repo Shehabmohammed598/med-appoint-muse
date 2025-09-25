@@ -139,7 +139,7 @@ const Index = () => {
                 <p className="text-muted-foreground mb-4">{t('bookAppointmentsViewRecords')}</p>
                 <div className="space-y-2">
                   <Button asChild className="w-full">
-                    <Link to="/patient-auth">Patient Login</Link>
+                    <Link to="/auth">Patient Login/Signup</Link>
                   </Button>
                   <Button asChild variant="outline" className="w-full">
                     <Link to="/book-appointment">Book as Guest</Link>

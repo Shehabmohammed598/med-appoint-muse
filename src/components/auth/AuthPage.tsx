@@ -161,10 +161,10 @@ export function AuthPage() {
 
   const handleContinueAsGuest = () => {
     setIsGuest(true);
-    navigate('/patient/specialties');
+    navigate('/book-appointment');
     toast({
-      title: "Browsing as Guest",
-      description: "You can explore doctors and specialties. Sign up to book appointments!",
+      title: "Continue as Guest",
+      description: "You can book an appointment without creating an account.",
     });
   };
 
@@ -357,7 +357,7 @@ export function AuthPage() {
                   Don't want to create an account right now?
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Browse doctors and specialties without signing up
+                  Book an appointment without signing up
                 </p>
               </div>
               <Button
