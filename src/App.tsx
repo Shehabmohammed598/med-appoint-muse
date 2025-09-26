@@ -8,6 +8,9 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { GuestProvider } from "@/contexts/GuestContext";
 import Index from "./pages/Index";
+import Specialties from "./pages/Specialties";
+import Doctors from "./pages/Doctors";
+import BookAppointment from "./pages/BookAppointment";
 import Dashboard from "./pages/Dashboard";
 import Appointments from "./pages/Appointments";
 import Profile from "./pages/Profile";
@@ -47,9 +50,14 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
+                {/* Main Flow Routes */}
                 <Route path="/" element={<Index />} />
-                <Route path="/book-appointment" element={<GuestBookingForm />} />
+                <Route path="/specialties" element={<Specialties />} />
+                <Route path="/specialties/:specialtyId/doctors" element={<Doctors />} />
+                <Route path="/book-appointment/:doctorId" element={<BookAppointment />} />
                 <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+                
+                {/* Legacy/Admin Routes */}
                 <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/contact" element={<Contact />} />

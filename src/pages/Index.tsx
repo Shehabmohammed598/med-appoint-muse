@@ -1,236 +1,282 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useAuth } from '@/hooks/useAuth';
+import { useGuest } from '@/contexts/GuestContext';
+import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { LanguageToggle } from '@/components/ui/language-toggle';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { Calendar, Users, Shield, Heart, Clock, Star } from 'lucide-react';
+import { Users, UserCheck, Eye, EyeOff, Mail, Lock, Heart, Calendar } from 'lucide-react';
 
 const Index = () => {
-  const { t } = useLanguage();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [role, setRole] = useState('patient');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const { user, signIn, signUp } = useAuth();
+  const { setIsGuest } = useGuest();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const features = [
-    {
-      icon: Calendar,
-      title: t('appointmentBooking'),
-      description: t('easyOnlineBooking')
-    },
-    {
-      icon: Users,
-      title: t('doctorPatientPortal'),
-      description: t('dedicatedPortals')
-    },
-    {
-      icon: Shield,
-      title: t('secureHealthRecords'),
-      description: t('hipaaCompliant')
+  // Redirect authenticated users to specialties
+  if (user) {
+    return <Navigate to="/specialties" replace />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        const { error } = await signUp(email, password, {
+          first_name: firstName,
+          last_name: lastName,
+          role,
+        });
+        
+        if (error) {
+          let errorMessage = "Unable to create account. Please try again.";
+          
+          if (error.message.includes('already registered')) {
+            errorMessage = "This email is already registered. Please sign in instead.";
+          } else if (error.message.includes('Password')) {
+            errorMessage = "Password must be at least 6 characters long.";
+          } else if (error.message.includes('email')) {
+            errorMessage = "Please enter a valid email address.";
+          }
+          
+          toast({
+            title: "Signup Failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Account Created!",
+            description: "Please check your email to verify your account before signing in.",
+          });
+          setIsSignUp(false);
+          setPassword('');
+        }
+      } else {
+        const { error } = await signIn(email, password);
+        
+        if (error) {
+          let errorMessage = "Invalid login credentials. Please check your email and password.";
+          
+          if (error.message.includes('Email not confirmed')) {
+            errorMessage = "Please verify your email address before signing in.";
+          } else if (error.message.includes('Invalid login credentials')) {
+            errorMessage = "Invalid email or password. Please try again.";
+          }
+          
+          toast({
+            title: "Login Failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Welcome back!",
+            description: "Redirecting to specialties...",
+          });
+          navigate('/specialties');
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "Authentication Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const stats = [
-    { number: '500+', label: t('patients') },
-    { number: '50+', label: t('doctors') },
-    { number: '10,000+', label: t('appointments') },
-    { number: '99.9%', label: t('uptime') }
-  ];
+  const handleContinueAsGuest = () => {
+    setIsGuest(true);
+    navigate('/specialties');
+    toast({
+      title: "Continue as Guest",
+      description: "You can browse and book appointments as a guest.",
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
       {/* Header */}
-      <header className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Heart className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-primary">HealthCare</span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-              {t('contact')}
-            </Link>
-            <LanguageToggle />
-            <ThemeToggle />
-            <Button asChild variant="outline">
-              <Link to="/admin-login">{t('signIn')}</Link>
-            </Button>
-          </nav>
+      <div className="absolute top-0 left-0 right-0 p-6 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-primary">
+          <Heart className="h-6 w-6" />
+          <span className="text-xl font-bold">HealthCare</span>
         </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center max-w-4xl">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            {t('modernHealthcare')} <span className="text-primary">{t('management')}</span>
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {t('comprehensiveHealthcarePlatform')}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg">
-              <Link to="/book-appointment">
-                <Calendar className="mr-2 h-5 w-5" />
-                {t('getStarted')}
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link to="/contact">{t('learnMore')}</Link>
+        <div className="flex gap-2">
+          <LanguageToggle />
+          <ThemeToggle />
+        </div>
+      </div>
+      
+      <Card className="w-full max-w-lg shadow-2xl border-0 bg-card/80 backdrop-blur-sm">
+        <CardHeader className="space-y-4 pb-8">
+          <div className="text-center space-y-2">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Heart className="h-8 w-8 text-primary" />
+              <span className="text-2xl font-bold text-primary">Doctor Reservation</span>
+            </div>
+            <CardTitle className="text-3xl font-bold tracking-tight">
+              {isSignUp ? 'Create Account' : 'Welcome Back'}
+            </CardTitle>
+            <CardDescription className="text-base text-muted-foreground">
+              {isSignUp 
+                ? 'Join our healthcare platform to get started'
+                : 'Sign in to book appointments with our doctors'
+              }
+            </CardDescription>
+          </div>
+          
+          <div className="text-center">
+            <span className="text-sm text-muted-foreground">
+              {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+            </span>{' '}
+            <Button
+              variant="link"
+              className="p-0 h-auto font-medium text-primary hover:text-primary/80"
+              onClick={() => setIsSignUp(!isSignUp)}
+            >
+              {isSignUp ? 'Sign in' : 'Sign up'}
             </Button>
           </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
-                  {stat.number}
+        </CardHeader>
+        
+        <CardContent className="px-8 pb-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {isSignUp && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
+                    <Input
+                      id="firstName"
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Enter first name"
+                      className="h-12"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Enter last name"
+                      className="h-12"
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('whyChooseUs')}</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t('advancedFeaturesForModernHealthcare')}
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="text-center">
-                <CardHeader>
-                  <feature.icon className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Portal Access Section */}
-      <section className="py-20 bg-muted/50 px-4">
-        <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('accessYourPortal')}</h2>
-            <p className="text-xl text-muted-foreground">{t('selectPortalType')}</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="text-center">
-                <Users className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                <CardTitle>{t('patientPortal')}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center space-y-3">
-                <p className="text-muted-foreground mb-4">{t('bookAppointmentsViewRecords')}</p>
-                <div className="space-y-2">
-                  <Button asChild className="w-full">
-                    <Link to="/auth">Patient Login/Signup</Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link to="/book-appointment">Book as Guest</Link>
-                  </Button>
+                
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium">Account Type</Label>
+                  <RadioGroup value={role} onValueChange={setRole} className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-3 border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                      <RadioGroupItem value="patient" id="patient" />
+                      <Label htmlFor="patient" className="font-normal cursor-pointer">Patient</Label>
+                    </div>
+                    <div className="flex items-center space-x-3 border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                      <RadioGroupItem value="doctor" id="doctor" />
+                      <Label htmlFor="doctor" className="font-normal cursor-pointer">Doctor</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
-              </CardContent>
-            </Card>
+              </>
+            )}
             
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="text-center">
-                <Clock className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <CardTitle>{t('doctorPortal')}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground mb-4">{t('managePatientsAppointments')}</p>
-                <Button asChild variant="outline" className="w-full">
-                  <Link to="/admin-login">{t('doctorLogin')}</Link>
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="pl-10 h-12"
+                  required
+                />
+              </div>
+            </div>
             
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="text-center">
-                <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <CardTitle>{t('adminPortal')}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground mb-4">{t('systemAdministration')}</p>
-                <Button asChild variant="destructive" className="w-full">
-                  <Link to="/admin-login">{t('adminLogin')}</Link>
+            <div className="space-y-3">
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="pl-10 pr-12 h-12"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-10 w-10 p-0 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+              </div>
+            </div>
+            
+            <Button type="submit" className="w-full h-12 text-base font-medium" disabled={loading}>
+              <UserCheck className="w-4 h-4 mr-2" />
+              {loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
+            </Button>
+          </form>
 
-      {/* Footer */}
-      <footer className="border-t py-12 px-4">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Heart className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">HealthCare</span>
-              </div>
-              <p className="text-muted-foreground">{t('modernHealthcareSolution')}</p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">{t('quickLinks')}</h4>
+          {/* Guest Mode Section */}
+          <div className="mt-8 pt-6 border-t border-border">
+            <div className="text-center space-y-4">
               <div className="space-y-2">
-                <Link to="/" className="block text-muted-foreground hover:text-foreground">
-                  {t('signIn')}
-                </Link>
-                <Link to="/contact" className="block text-muted-foreground hover:text-foreground">
-                  {t('contact')}
-                </Link>
+                <p className="text-sm text-muted-foreground">
+                  Don't want to create an account right now?
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Browse specialties and book appointments without signing up
+                </p>
               </div>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">{t('portals')}</h4>
-              <div className="space-y-2">
-                <Link to="/" className="block text-muted-foreground hover:text-foreground">
-                  {t('patientPortal')}
-                </Link>
-                <Link to="/" className="block text-muted-foreground hover:text-foreground">
-                  {t('doctorPortal')}
-                </Link>
-                <Link to="/" className="block text-muted-foreground hover:text-foreground">
-                  {t('adminPortal')}
-                </Link>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">{t('contact')}</h4>
-              <div className="space-y-2 text-muted-foreground">
-                <p>+1 (555) 123-4567</p>
-                <p>info@healthcare.com</p>
-                <p>123 Medical Center Dr</p>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12 text-base font-medium border-dashed hover:border-solid transition-all"
+                onClick={handleContinueAsGuest}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Continue as Guest
+              </Button>
             </div>
           </div>
-          
-          <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 HealthCare. {t('allRightsReserved')}</p>
-          </div>
-        </div>
-      </footer>
+        </CardContent>
+      </Card>
     </div>
   );
 };
