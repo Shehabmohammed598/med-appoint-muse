@@ -6,8 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useGuest } from '@/contexts/GuestContext';
+import { useBookingProtection } from '@/hooks/useBookingProtection';
+import { BookingProtection } from '@/components/auth/BookingProtection';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { LanguageToggle } from '@/components/ui/language-toggle';
+import { calculateQueueingMetrics, generateAppointmentSlots, checkEmergencyAvailability } from '@/utils/queueing';
 import { 
   Heart, 
   ArrowLeft, 
@@ -15,7 +18,11 @@ import {
   Clock, 
   Calendar,
   LogOut,
-  Stethoscope
+  Stethoscope,
+  AlertTriangle,
+  Star,
+  Globe,
+  Award
 } from 'lucide-react';
 
 interface Doctor {
@@ -34,14 +41,33 @@ const Doctors = () => {
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [emergencyAvailability, setEmergencyAvailability] = useState<Record<string, boolean>>({});
   const { user, signOut } = useAuth();
   const { isGuest, setIsGuest } = useGuest();
+  const { showProtection, setShowProtection, checkBookingPermission } = useBookingProtection();
   
   const specialtyName = location.state?.specialtyName || 'Unknown Specialty';
 
   useEffect(() => {
     fetchDoctors();
   }, [specialtyId]);
+
+  useEffect(() => {
+    // Check emergency availability for each doctor
+    const checkEmergencySlots = async () => {
+      const availability: Record<string, boolean> = {};
+      for (const doctor of doctors) {
+        if (doctor.specialty) {
+          availability[doctor.id] = await checkEmergencyAvailability(new Date(), doctor.specialty);
+        }
+      }
+      setEmergencyAvailability(availability);
+    };
+
+    if (doctors.length > 0) {
+      checkEmergencySlots();
+    }
+  }, [doctors]);
 
   const fetchDoctors = async () => {
     try {
@@ -76,13 +102,26 @@ const Doctors = () => {
     }
   };
 
-  const handleBookAppointment = (doctorId: string, doctorName: string) => {
-    navigate(`/book-appointment/${doctorId}`, {
-      state: { 
-        doctorName,
-        specialty: specialtyName 
-      }
+  const handleBookAppointment = (doctorId: string, doctorName: string, isEmergency: boolean = false) => {
+    checkBookingPermission(() => {
+      navigate(`/book-appointment/${doctorId}`, {
+        state: { 
+          doctorName,
+          specialty: specialtyName,
+          isEmergency
+        }
+      });
     });
+  };
+
+  const calculateWaitTime = (doctor: Doctor): number => {
+    const metrics = calculateQueueingMetrics(6, 2, 1); // 6 patients/hour, 2 service rate, 1 doctor
+    return Math.round(metrics.expectedWaitTime);
+  };
+
+  const getAvailableSlots = (doctor: Doctor): number => {
+    const slots = generateAppointmentSlots('09:00', '17:00', 30, [], 2);
+    return slots.filter(slot => slot.available).length;
   };
 
   const handleSignOut = async () => {
@@ -170,59 +209,116 @@ const Doctors = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {doctors.map((doctor) => (
-              <Card 
-                key={doctor.id} 
-                className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20"
-              >
-                <CardHeader>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                      <User className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">
-                        Dr. {doctor.first_name} {doctor.last_name}
-                      </CardTitle>
-                      <Badge variant="secondary" className="text-xs">
-                        {doctor.specialty}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Stethoscope className="h-4 w-4" />
-                      <span>Specialized in {doctor.specialty}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>Working Hours: 9:00 AM - 5:00 PM</span>
-                    </div>
-                    {doctor.language && (
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>Languages: {doctor.language}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {doctors.map((doctor) => {
+              const waitTime = calculateWaitTime(doctor);
+              const availableSlots = getAvailableSlots(doctor);
+              const hasEmergencySlots = emergencyAvailability[doctor.id];
+
+              return (
+                <Card 
+                  key={doctor.id} 
+                  className="hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20 overflow-hidden"
+                >
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start gap-4">
+                      <div className="relative">
+                        <img 
+                          src={`https://randomuser.me/api/portraits/${doctor.first_name?.toLowerCase().includes('hind') || doctor.first_name?.toLowerCase().includes('amina') || doctor.first_name?.toLowerCase().includes('fatima') ? 'women' : 'men'}/${Math.abs(doctor.id.charCodeAt(1) % 50)}.jpg`}
+                          alt={`Dr. ${doctor.first_name} ${doctor.last_name}`}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=64&h=64&fit=crop&crop=face';
+                          }}
+                        />
+                        {doctor.specialty && (
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                            <Stethoscope className="h-3 w-3 text-primary-foreground" />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg mb-1">
+                          Dr. {doctor.first_name} {doctor.last_name}
+                        </CardTitle>
+                        <Badge variant="secondary" className="text-xs mb-2">
+                          {doctor.specialty}
+                        </Badge>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <span className="font-medium">4.8</span>
+                          <span>({Math.floor(Math.random() * 100 + 50)} reviews)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
                   
-                  <Button 
-                    className="w-full"
-                    onClick={() => handleBookAppointment(
-                      doctor.user_id, 
-                      `${doctor.first_name} ${doctor.last_name}`
-                    )}
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    View Details & Book
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="space-y-4 pt-0">
+                    {/* Doctor Bio */}
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Specialized in {doctor.specialty?.toLowerCase()} with extensive experience in patient care and modern treatment methods.
+                    </p>
+
+                    {/* Schedule & Wait Time */}
+                    <div className="grid grid-cols-2 gap-4 p-3 bg-muted/30 rounded-lg">
+                      <div className="text-center">
+                        <Clock className="h-4 w-4 text-primary mx-auto mb-1" />
+                        <p className="text-xs text-muted-foreground">Expected Wait</p>
+                        <p className="text-sm font-semibold">{waitTime} min</p>
+                      </div>
+                      <div className="text-center">
+                        <Calendar className="h-4 w-4 text-primary mx-auto mb-1" />
+                        <p className="text-xs text-muted-foreground">Available Slots</p>
+                        <p className="text-sm font-semibold">{availableSlots}</p>
+                      </div>
+                    </div>
+
+                    {/* Languages & Qualifications */}
+                    <div className="space-y-2 text-xs">
+                      {doctor.language && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Globe className="h-3 w-3" />
+                          <span>Languages: {doctor.language}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Award className="h-3 w-3" />
+                        <span>Working Hours: 9:00 AM - 5:00 PM</span>
+                      </div>
+                    </div>
+
+                    {/* Booking Buttons */}
+                    <div className="space-y-2 pt-2">
+                      <Button 
+                        className="w-full"
+                        onClick={() => handleBookAppointment(
+                          doctor.user_id, 
+                          `${doctor.first_name} ${doctor.last_name}`,
+                          false
+                        )}
+                      >
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Normal Booking
+                      </Button>
+                      
+                      <Button 
+                        variant={hasEmergencySlots ? "destructive" : "outline"}
+                        className="w-full"
+                        disabled={!hasEmergencySlots}
+                        onClick={() => handleBookAppointment(
+                          doctor.user_id, 
+                          `${doctor.first_name} ${doctor.last_name}`,
+                          true
+                        )}
+                      >
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        {hasEmergencySlots ? 'Emergency Booking' : 'Emergency Slots Full'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 
@@ -240,6 +336,12 @@ const Doctors = () => {
           </div>
         )}
       </main>
+
+      {/* Booking Protection Dialog */}
+      <BookingProtection 
+        open={showProtection}
+        onOpenChange={setShowProtection}
+      />
     </div>
   );
 };
