@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +10,7 @@ import { useBookingProtection } from '@/hooks/useBookingProtection';
 import { BookingProtection } from '@/components/auth/BookingProtection';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { LanguageToggle } from '@/components/ui/language-toggle';
-import { calculateQueueingMetrics, generateAppointmentSlots, checkEmergencyAvailability } from '@/utils/queueing';
+import { calculateQueueingMetrics } from '@/utils/queueing';
 import { 
   Heart, 
   ArrowLeft, 
@@ -21,82 +21,128 @@ import {
   Stethoscope,
   AlertTriangle,
   Star,
-  Globe,
   Award
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Doctor {
   id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  specialty: string;
-  phone: string;
-  language: string;
+  name: string;
+  specialty_id: string;
+  bio: string | null;
+  photo_url: string | null;
+  working_hours: string | null;
+  queue_length: number;
+  created_at: string;
+}
+
+interface Specialty {
+  id: string;
+  name: string;
+  created_at: string;
 }
 
 const Doctors = () => {
   const { specialtyId } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [specialty, setSpecialty] = useState<Specialty | null>(null);
   const [loading, setLoading] = useState(true);
-  const [emergencyAvailability, setEmergencyAvailability] = useState<Record<string, boolean>>({});
   const { user, signOut } = useAuth();
   const { isGuest, setIsGuest } = useGuest();
   const { showProtection, setShowProtection, checkBookingPermission } = useBookingProtection();
-  
-  const specialtyName = location.state?.specialtyName || 'Unknown Specialty';
 
   useEffect(() => {
-    fetchDoctors();
+    fetchDoctorsAndSpecialty();
+
+    // Subscribe to realtime changes
+    const doctorsChannel = supabase
+      .channel('doctors-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'doctors'
+        },
+        () => {
+          fetchDoctorsAndSpecialty();
+        }
+      )
+      .subscribe();
+
+    const specialtiesChannel = supabase
+      .channel('specialties-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialties'
+        },
+        () => {
+          fetchDoctorsAndSpecialty();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(doctorsChannel);
+      supabase.removeChannel(specialtiesChannel);
+    };
   }, [specialtyId]);
 
-  useEffect(() => {
-    // Check emergency availability for each doctor
-    const checkEmergencySlots = async () => {
-      const availability: Record<string, boolean> = {};
-      for (const doctor of doctors) {
-        if (doctor.specialty) {
-          availability[doctor.id] = await checkEmergencyAvailability(new Date(), doctor.specialty);
-        }
-      }
-      setEmergencyAvailability(availability);
-    };
+  const fetchDoctorsAndSpecialty = async () => {
+    if (!specialtyId) return;
 
-    if (doctors.length > 0) {
-      checkEmergencySlots();
-    }
-  }, [doctors]);
-
-  const fetchDoctors = async () => {
     try {
-      // First get the specialty name to match with doctor profiles
+      setLoading(true);
+
+      // Fetch specialty info
       const { data: specialtyData, error: specialtyError } = await supabase
         .from('specialties')
-        .select('name_en')
+        .select('*')
         .eq('id', specialtyId)
         .single();
 
       if (specialtyError) {
         console.error('Error fetching specialty:', specialtyError);
-        return;
+        toast.error('Failed to load specialty');
+      } else if (specialtyData) {
+        // Cast to handle both name and name_en/name_ar fields
+        setSpecialty({
+          id: specialtyData.id,
+          name: (specialtyData as any).name || (specialtyData as any).name_en || 'Unknown',
+          created_at: specialtyData.created_at
+        });
       }
 
-      // Then fetch doctors with that specialty
-      const { data, error } = await supabase
-        .from('profiles')
+      // Fetch doctors for this specialty
+      const { data: doctorsData, error: doctorsError } = await (supabase as any)
+        .from('doctors')
         .select('*')
-        .eq('role', 'doctor')
-        .eq('specialty', specialtyData.name_en);
+        .eq('specialty_id', specialtyId)
+        .order('name');
 
-      if (error) {
-        console.error('Error fetching doctors:', error);
+      if (doctorsError) {
+        console.error('Error fetching doctors:', doctorsError);
+        toast.error('Failed to load doctors');
       } else {
-        setDoctors(data || []);
+        // Cast the data to our interface
+        setDoctors((doctorsData as any[]).map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          specialty_id: doc.specialty_id,
+          bio: doc.bio,
+          photo_url: doc.photo_url,
+          working_hours: doc.working_hours,
+          queue_length: doc.queue_length || 0,
+          created_at: doc.created_at
+        })));
       }
     } catch (error) {
-      console.error('Error fetching doctors:', error);
+      console.error('Error:', error);
+      toast.error('An error occurred');
     } finally {
       setLoading(false);
     }
@@ -107,21 +153,11 @@ const Doctors = () => {
       navigate(`/book-appointment/${doctorId}`, {
         state: { 
           doctorName,
-          specialty: specialtyName,
+          specialty: specialty?.name || 'Doctor',
           isEmergency
         }
       });
     });
-  };
-
-  const calculateWaitTime = (doctor: Doctor): number => {
-    const metrics = calculateQueueingMetrics(6, 2, 1); // 6 patients/hour, 2 service rate, 1 doctor
-    return Math.round(metrics.expectedWaitTime);
-  };
-
-  const getAvailableSlots = (doctor: Doctor): number => {
-    const slots = generateAppointmentSlots('09:00', '17:00', 30, [], 2);
-    return slots.filter(slot => slot.available).length;
   };
 
   const handleSignOut = async () => {
@@ -131,6 +167,16 @@ const Doctors = () => {
       await signOut();
     }
     navigate('/');
+  };
+
+  const emergencySlotsAvailable = (doctor: Doctor) => {
+    // In a real app, check against emergency_limits table
+    return true;
+  };
+
+  const calculateWaitTime = (queueLength: number): number => {
+    const metrics = calculateQueueingMetrics(queueLength / 2, 2, 1);
+    return Math.round(metrics.expectedWaitTime);
   };
 
   return (
@@ -184,10 +230,17 @@ const Doctors = () => {
         </div>
 
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">{specialtyName} Doctors</h1>
+          <h1 className="text-4xl font-bold mb-4">
+            {specialty?.name || 'Loading...'} Doctors
+          </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Choose from our qualified {specialtyName.toLowerCase()} specialists to book your appointment.
+            Choose from our qualified specialists to book your appointment.
           </p>
+          {!loading && (
+            <Badge variant="secondary" className="mt-4">
+              {doctors.length} {doctors.length === 1 ? 'Doctor' : 'Doctors'} Available
+            </Badge>
+          )}
         </div>
 
         {loading ? (
@@ -208,12 +261,23 @@ const Doctors = () => {
               </Card>
             ))}
           </div>
+        ) : doctors.length === 0 ? (
+          <div className="text-center py-12">
+            <Stethoscope className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No Doctors Available</h3>
+            <p className="text-muted-foreground mb-6">
+              Currently no doctors are available for {specialty?.name}. Please try another specialty or check back later.
+            </p>
+            <Button variant="outline" onClick={() => navigate('/specialties')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Browse Other Specialties
+            </Button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {doctors.map((doctor) => {
-              const waitTime = calculateWaitTime(doctor);
-              const availableSlots = getAvailableSlots(doctor);
-              const hasEmergencySlots = emergencyAvailability[doctor.id];
+              const waitTime = calculateWaitTime(doctor.queue_length);
+              const hasEmergencySlots = emergencySlotsAvailable(doctor);
 
               return (
                 <Card 
@@ -224,25 +288,23 @@ const Doctors = () => {
                     <div className="flex items-start gap-4">
                       <div className="relative">
                         <img 
-                          src={`https://randomuser.me/api/portraits/${doctor.first_name?.toLowerCase().includes('hind') || doctor.first_name?.toLowerCase().includes('amina') || doctor.first_name?.toLowerCase().includes('fatima') ? 'women' : 'men'}/${Math.abs(doctor.id.charCodeAt(1) % 50)}.jpg`}
-                          alt={`Dr. ${doctor.first_name} ${doctor.last_name}`}
+                          src={doctor.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${doctor.id}`}
+                          alt={doctor.name}
                           className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
                           onError={(e) => {
                             e.currentTarget.src = 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=64&h=64&fit=crop&crop=face';
                           }}
                         />
-                        {doctor.specialty && (
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                            <Stethoscope className="h-3 w-3 text-primary-foreground" />
-                          </div>
-                        )}
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                          <Stethoscope className="h-3 w-3 text-primary-foreground" />
+                        </div>
                       </div>
                       <div className="flex-1">
                         <CardTitle className="text-lg mb-1">
-                          Dr. {doctor.first_name} {doctor.last_name}
+                          Dr. {doctor.name}
                         </CardTitle>
                         <Badge variant="secondary" className="text-xs mb-2">
-                          {doctor.specialty}
+                          {specialty?.name}
                         </Badge>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -256,7 +318,7 @@ const Doctors = () => {
                   <CardContent className="space-y-4 pt-0">
                     {/* Doctor Bio */}
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Specialized in {doctor.specialty?.toLowerCase()} with extensive experience in patient care and modern treatment methods.
+                      {doctor.bio || `Specialized in ${specialty?.name?.toLowerCase()} with extensive experience in patient care.`}
                     </p>
 
                     {/* Schedule & Wait Time */}
@@ -267,23 +329,17 @@ const Doctors = () => {
                         <p className="text-sm font-semibold">{waitTime} min</p>
                       </div>
                       <div className="text-center">
-                        <Calendar className="h-4 w-4 text-primary mx-auto mb-1" />
-                        <p className="text-xs text-muted-foreground">Available Slots</p>
-                        <p className="text-sm font-semibold">{availableSlots}</p>
+                        <User className="h-4 w-4 text-primary mx-auto mb-1" />
+                        <p className="text-xs text-muted-foreground">Queue</p>
+                        <p className="text-sm font-semibold">{doctor.queue_length} patients</p>
                       </div>
                     </div>
 
-                    {/* Languages & Qualifications */}
+                    {/* Working Hours */}
                     <div className="space-y-2 text-xs">
-                      {doctor.language && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Globe className="h-3 w-3" />
-                          <span>Languages: {doctor.language}</span>
-                        </div>
-                      )}
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Award className="h-3 w-3" />
-                        <span>Working Hours: 9:00 AM - 5:00 PM</span>
+                        <span>Working Hours: {doctor.working_hours || '9:00 AM - 5:00 PM'}</span>
                       </div>
                     </div>
 
@@ -292,8 +348,8 @@ const Doctors = () => {
                       <Button 
                         className="w-full"
                         onClick={() => handleBookAppointment(
-                          doctor.user_id, 
-                          `${doctor.first_name} ${doctor.last_name}`,
+                          doctor.id, 
+                          doctor.name,
                           false
                         )}
                       >
@@ -306,8 +362,8 @@ const Doctors = () => {
                         className="w-full"
                         disabled={!hasEmergencySlots}
                         onClick={() => handleBookAppointment(
-                          doctor.user_id, 
-                          `${doctor.first_name} ${doctor.last_name}`,
+                          doctor.id, 
+                          doctor.name,
                           true
                         )}
                       >
@@ -319,20 +375,6 @@ const Doctors = () => {
                 </Card>
               );
             })}
-          </div>
-        )}
-
-        {!loading && doctors.length === 0 && (
-          <div className="text-center py-12">
-            <Stethoscope className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Doctors Available</h3>
-            <p className="text-muted-foreground mb-6">
-              Currently no doctors are available for {specialtyName}. Please try another specialty or check back later.
-            </p>
-            <Button variant="outline" onClick={() => navigate('/specialties')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Browse Other Specialties
-            </Button>
           </div>
         )}
       </main>

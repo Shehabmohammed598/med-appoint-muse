@@ -21,8 +21,8 @@ import {
 
 interface Specialty {
   id: string;
-  name_en: string;
-  name_ar: string;
+  name: string;
+  created_at: string;
 }
 
 const specialtyIcons: Record<string, any> = {
@@ -33,6 +33,7 @@ const specialtyIcons: Record<string, any> = {
   'Orthopedics': Bone,
   'Pediatrics': Baby,
   'General Practice': Activity,
+  'Dentistry': Activity,
 };
 
 const Specialties = () => {
@@ -44,6 +45,26 @@ const Specialties = () => {
 
   useEffect(() => {
     fetchSpecialties();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('specialties-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialties'
+        },
+        () => {
+          fetchSpecialties();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchSpecialties = async () => {
@@ -51,12 +72,17 @@ const Specialties = () => {
       const { data, error } = await supabase
         .from('specialties')
         .select('*')
-        .order('name_en');
+        .order('name');
 
       if (error) {
         console.error('Error fetching specialties:', error);
       } else {
-        setSpecialties(data || []);
+        // Cast the data to match our interface
+        setSpecialties((data as any[]).map(item => ({
+          id: item.id,
+          name: item.name || item.name_en || 'Unknown',
+          created_at: item.created_at
+        })));
       }
     } catch (error) {
       console.error('Error fetching specialties:', error);
@@ -142,19 +168,19 @@ const Specialties = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {specialties.map((specialty) => {
-              const IconComponent = specialtyIcons[specialty.name_en] || Stethoscope;
+              const IconComponent = specialtyIcons[specialty.name] || Stethoscope;
               
               return (
                 <Card 
                   key={specialty.id} 
                   className="hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-105 border-2 hover:border-primary/20"
-                  onClick={() => handleSpecialtyClick(specialty.id, specialty.name_en)}
+                  onClick={() => handleSpecialtyClick(specialty.id, specialty.name)}
                 >
                   <CardHeader className="text-center">
                     <IconComponent className="h-12 w-12 text-primary mx-auto mb-4" />
-                    <CardTitle className="text-xl">{specialty.name_en}</CardTitle>
+                    <CardTitle className="text-xl">{specialty.name}</CardTitle>
                     <CardDescription className="text-sm text-muted-foreground">
-                      Find specialized doctors in {specialty.name_en.toLowerCase()}
+                      Find specialized doctors in {specialty.name.toLowerCase()}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="text-center">
